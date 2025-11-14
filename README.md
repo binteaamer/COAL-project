@@ -50,7 +50,7 @@ This project also includes **Quiz Mode**, **Speed Test Mode**, and **Two’s Com
   - Total time taken  
 
 
-## 🛠 Tech Stack
+## Tech Stack
 
 | Component  | Technology             |
 |-----------|------------------------|
