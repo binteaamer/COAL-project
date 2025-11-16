@@ -87,43 +87,43 @@ mainMenuLoop:
 
 
 do_DecToBin:
-    ; call DecToBin
+     call DecToBin
     jmp returnToMenu
 
 do_DecToOct:
-    ; call DecToOct
+     call DecToOct
     jmp returnToMenu
 
 do_DecToHex:
-    ; call DecToHex
+     call DecToHex
     jmp returnToMenu
 
 do_BinToDec:
-    ; call BinToDec
+     call BinToDec
     jmp returnToMenu
 
 do_OctToDec:
-    ; call OctToDec
+     call OctToDec
     jmp returnToMenu
 
 do_HexToDec:
-    ; call HexToDec
+     call HexToDec
     jmp returnToMenu
 
 do_DirectConversions:
-    ; call DirectConversions
+     call DirectConversions
     jmp returnToMenu
 
 do_TwosComplement:
-    ; call TwosComplement
+     call TwosComplement
     jmp returnToMenu
 
 do_QuizMode:
-    ; call QuizMode
+     call QuizMode
     jmp returnToMenu
 
 do_SpeedTest:
-    ; call SpeedTestMode
+     call SpeedTestMode
     jmp returnToMenu
 
 returnToMenu:
