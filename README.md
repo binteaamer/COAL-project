@@ -1,6 +1,14 @@
 # NumeraX — Number System Converter  
 ### *(Assembly Language | COAL Course Project)*
 
+## Team Members
+
+| Role | Name | Roll No. |
+|------|-----------------------|----------|
+| **Leader** | Abeeha Binte Aamer | 24k0940 |
+| Member | Aamna Rizwan | 24k0695 |
+| Member | Laiba Khan | 24k0644 |
+
 NumeraX is an educational **Number System Converter** built entirely in **MASM Assembly** using the **Irvine32** library.  
 It helps students understand and practice number system conversions interactively, making concepts of **decimal, binary, octal, and hexadecimal** easier to learn.
 
@@ -76,13 +84,7 @@ NumeraX/
 └── /Include/Irvine32.inc ; Irvine32 library
 
 
-## Team Members
 
-| Role | Name | Roll No. |
-|------|-----------------------|----------|
-| **Leader** | Abeeha Binte Aamer | 24k0940 |
-| Member | Aamna Rizwan | 24k0695 |
-| Member | Laiba Khan | 24k0644 |
 
 
 
