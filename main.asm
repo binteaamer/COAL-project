@@ -1,1133 +1,1267 @@
 TITLE NumeraX - Number System Converter
 INCLUDE Irvine32.inc
+
+; ============================
+; DATA SECTION
+; ============================
 .data
-; Main Menu
-menuTitle   BYTE "=== NumeraX: Number System Converter ===", 0
+
+; ----- Main Menu Text -----
+menuTitle   BYTE "=== NumeraX: Number System Converter ===",0
 menuOptions BYTE \
-    "1. Decimal to Binary", 0Dh,0Ah,\
-    "2. Decimal to Octal", 0Dh,0Ah,\
-    "3. Decimal to Hexadecimal", 0Dh,0Ah,\
-    "4. Binary to Decimal", 0Dh,0Ah,\
-    "5. Octal to Decimal", 0Dh,0Ah,\
-    "6. Hexadecimal to Decimal", 0Dh,0Ah,\
-    "7. Binary <-> Octal / Hexadecimal", 0Dh,0Ah,\
-    "8. Two's Complement Representation", 0Dh,0Ah,\
-    "9. Quiz Mode", 0Dh,0Ah,\
-    "10. Speed Test Mode", 0Dh,0Ah,\
-    "11. Exit", 0Dh,0Ah,0
+    "1. Decimal to Binary",0Dh,0Ah,\
+    "2. Decimal to Octal",0Dh,0Ah,\
+    "3. Decimal to Hexadecimal",0Dh,0Ah,\
+    "4. Binary to Decimal",0Dh,0Ah,\
+    "5. Octal to Decimal",0Dh,0Ah,\
+    "6. Hexadecimal to Decimal",0Dh,0Ah,\
+    "7. Binary <-> Octal / Hexadecimal (Direct Conversions)",0Dh,0Ah,\
+    "8. Two's Complement (Binary)",0Dh,0Ah,\
+    "9. Quiz Mode",0Dh,0Ah,\
+    "10. Speed Test Mode",0Dh,0Ah,\
+    "11. Exit",0Dh,0Ah,0
 
-; Direct Conversions Menu
-directConvMenu BYTE \
-    "=== Direct Conversions ===", 0Dh,0Ah,\
-    "1. Binary to Octal", 0Dh,0Ah,\
-    "2. Binary to Hexadecimal", 0Dh,0Ah,\
-    "3. Octal to Binary", 0Dh,0Ah,\
-    "4. Hexadecimal to Binary", 0Dh,0Ah,\
-    "5. Back to Main Menu", 0Dh,0Ah,0
+choiceMsg   BYTE "Enter your choice: ",0
+invalidMsg  BYTE "Invalid choice. Try again.",0
+goodbyeMsg  BYTE "Exiting program... Goodbye!",0
 
-; General Data
-userChoice DWORD ?
-inputBuffer BYTE 32 DUP(0)
-outputBuffer BYTE 32 DUP(0)
-invalidMsg  BYTE "Invalid choice. Try again.", 0
-goodbyeMsg  BYTE "Exiting program... Goodbye!", 0
+; ----- Direct Conversions Menu -----
+directMenuTitle BYTE "=== Direct Conversions ===",0
+directMenu BYTE \
+    "1. Binary to Octal",0Dh,0Ah,\
+    "2. Binary to Hexadecimal",0Dh,0Ah,\
+    "3. Octal to Binary",0Dh,0Ah,\
+    "4. Hexadecimal to Binary",0Dh,0Ah,\
+    "5. Back to Main Menu",0Dh,0Ah,0
+directChoice BYTE "Choose conversion type: ",0
 
-; Two's Complement Data
-msg1 byte "Enter number : ",0
-two_c_print byte "Two's complement : ",0
-buffer byte 33 DUP(0) ,0
-final byte 33 DUP(0) ,0
+; ----- Prompts -----
+decPrompt   BYTE "Enter decimal number: ",0
+binPrompt   BYTE "Enter binary number: ",0
+octPrompt   BYTE "Enter octal number: ",0
+hexPrompt   BYTE "Enter hexadecimal number: ",0
 
-; Prompt Messages
-directChoice BYTE "Choose conversion type: ", 0
-choice BYTE "Enter your choice: ", 0
-decPrompt BYTE "Enter decimal number: ", 0
-binPrompt BYTE "Enter binary number: ", 0
-octPrompt BYTE "Enter octal number: ", 0
-hexPrompt BYTE "Enter hexadecimal number: ", 0
+; Two's complement prompts
+tcPrompt    BYTE "Enter binary number (up to 32 bits): ",0
+tcResultMsg BYTE "Two's complement: ",0
 
-; Quiz Mode Data
-quizTitle BYTE "=== QUIZ MODE ===", 0
-quizScoreMsg BYTE "Score: ", 0
-quizTotalMsg BYTE " out of ", 0
-quizCorrect BYTE "Correct! Well done!", 0
-quizWrong BYTE "Wrong! The correct answer is: ", 0
+; General buffers
+inputStr    BYTE 33 DUP(0)     ; user input string
+outStr      BYTE 33 DUP(0)     ; result string for conversions
+tempStr     BYTE 33 DUP(0)
 
-questionBuffer BYTE 64 DUP(0)
-userAnswerBuffer BYTE 32 DUP(0)
-correctAnswerBuffer BYTE 32 DUP(0)
-tempDecBuffer BYTE 32 DUP(0)
+; For decimal I/O
+userChoice  DWORD ?
+tempVal     DWORD ?
 
-numQuestions DWORD 5
-currentQuestion DWORD 0
-correctAnswers DWORD 0
+; ============================
+; QUIZ / SPEED TEST DATA
+; ============================
 
-quizTypeMenu BYTE \
-    "=== QUIZ TYPE SELECTION ===", 0Dh,0Ah,\
-    "1. Random Questions (Mixed types)", 0Dh,0Ah,\
-    "2. Specific Conversion Type", 0Dh,0Ah,\
-    "3. Back to Main Menu", 0Dh,0Ah,0
+quizTitle       BYTE "=== QUIZ MODE ===",0
+speedTitle      BYTE "=== SPEED TEST MODE ===",0
 
-quizTypePrompt BYTE "Choose quiz type: ", 0
-selectedQuizType DWORD ?
-questionType DWORD -1
+quizTypeMenu    BYTE \
+ "1. Random Questions (all types)",0Dh,0Ah,\
+ "2. Specific Conversion Type",0Dh,0Ah,\
+ "3. Back to Main Menu",0Dh,0Ah,0
 
-specificTypeMenu BYTE \
-    "=== SELECT CONVERSION TYPE ===", 0Dh,0Ah,\
-    "1. Decimal to Binary", 0Dh,0Ah,\
-    "2. Decimal to Octal", 0Dh,0Ah,\
-    "3. Decimal to Hexadecimal", 0Dh,0Ah,\
-    "4. Binary to Decimal", 0Dh,0Ah,\
-    "5. Binary to Octal", 0Dh,0Ah,\
-    "6. Binary to Hexadecimal", 0Dh,0Ah,\
-    "7. Octal to Decimal", 0Dh,0Ah,\
-    "8. Octal to Binary", 0Dh,0Ah,\
-    "9. Octal to Hexadecimal", 0Dh,0Ah,\
-    "10. Hexadecimal to Decimal", 0Dh,0Ah,\
-    "11. Hexadecimal to Binary", 0Dh,0Ah,\
-    "12. Hexadecimal to Octal", 0Dh,0Ah,\
-    "13. Back to Quiz Type Menu", 0Dh,0Ah,0
+quizTypePrompt  BYTE "Choose quiz type: ",0
 
-specificTypePrompt BYTE "Choose conversion type: ", 0
-promptNumQuestions BYTE "Enter the number of questions: ", 0
-progressMsg BYTE "Question ", 0
-quizPercentageMsg BYTE "Percentage: ", 0
-userAnswerPrompt BYTE "Your answer: ", 0
-playAgainPrompt BYTE "Play again? (1=Yes, 2=No): ", 0
+; specific conversion types: 1..12
+specificTypeMenu1 BYTE \
+ "=== Select Conversion Type ===",0Dh,0Ah,\
+ " 1. Decimal to Binary",0Dh,0Ah,\
+ " 2. Decimal to Octal",0Dh,0Ah,\
+ " 3. Decimal to Hexadecimal",0Dh,0Ah,\
+ " 4. Binary to Decimal",0Dh,0Ah,\
+ " 5. Binary to Octal",0Dh,0Ah,\
+ " 6. Binary to Hexadecimal",0Dh,0Ah, 0
+specificTypeMenu2 BYTE \
+ " 7. Octal to Decimal",0Dh,0Ah,\
+ " 8. Octal to Binary",0Dh,0Ah,\
+ " 9. Octal to Hexadecimal",0Dh,0Ah,\
+ "10. Hexadecimal to Decimal",0Dh,0Ah,\
+ "11. Hexadecimal to Binary",0Dh,0Ah,\
+ "12. Hexadecimal to Octal",0Dh,0Ah,\
+ "13. Back to Quiz Menu",0Dh,0Ah,0
 
-; Question Templates
-decToBinQText BYTE "Convert decimal to binary: ", 0
-decToOctQText BYTE "Convert decimal to octal: ", 0
-decToHexQText BYTE "Convert decimal to hexadecimal: ", 0
-binToDecQText BYTE "Convert binary to decimal: ", 0
-binToOctQText BYTE "Convert binary to octal: ", 0
-binToHexQText BYTE "Convert binary to hexadecimal: ", 0
-octToDecQText BYTE "Convert octal to decimal: ", 0
-octToBinQText BYTE "Convert octal to binary: ", 0
-octToHexQText BYTE "Convert octal to hexadecimal: ", 0
-hexToDecQText BYTE "Convert hexadecimal to binary: ", 0
-hexToBinQText BYTE "Convert hexadecimal to decimal: ", 0
-hexToOctQText BYTE "Convert hexadecimal to octal: ", 0
+promptNumQuestions BYTE "Enter number of questions: ",0
+progressMsg    BYTE "Question ",0
+ofMsg          BYTE " of ",0
+userAnswerPrompt BYTE "Your answer: ",0
+quizCorrectMsg BYTE "Correct!",0
+quizWrongMsg   BYTE "Wrong. Correct answer: ",0
+scoreMsg       BYTE "Final score: ",0
+outOfMsg       BYTE " out of ",0
+percentMsg     BYTE " (",0
+percentSuffix  BYTE "%)",0
+timeMsg        BYTE "Time taken (ms): ",0
+playAgainPrompt BYTE "Play again? (1=Yes,2=No): ",0
 
+; question description lines:
+qTextDecBin BYTE "Convert decimal to binary: ",0
+qTextDecOct BYTE "Convert decimal to octal: ",0
+qTextDecHex BYTE "Convert decimal to hexadecimal: ",0
+qTextBinDec BYTE "Convert binary to decimal: ",0
+qTextBinOct BYTE "Convert binary to octal: ",0
+qTextBinHex BYTE "Convert binary to hexadecimal: ",0
+qTextOctDec BYTE "Convert octal to decimal: ",0
+qTextOctBin BYTE "Convert octal to binary: ",0
+qTextOctHex BYTE "Convert octal to hexadecimal: ",0
+qTextHexDec BYTE "Convert hexadecimal to decimal: ",0
+qTextHexBin BYTE "Convert hexadecimal to binary: ",0
+qTextHexOct BYTE "Convert hexadecimal to octal: ",0
+
+; quiz state
+numQuestions    DWORD 0
+correctAnswers  DWORD 0
+questionType    DWORD 0     ; 1..12, or 0 = random
+isSpeedTest     DWORD 0     ; 0 = normal quiz, 1 = speed test
+startTime       DWORD 0
+endTime         DWORD 0
+
+; ============================
+; CODE SECTION
+; ============================
 .code
-main PROC
-    call Clrscr
-    call Randomize
-    mov edi, OFFSET outputBuffer
-    mov ecx, LENGTHOF outputBuffer
-    dec ecx
-    xor eax, eax
-    rep stosb
-    mov BYTE PTR [edi], 0
 
-mainMenuLoop:
-    mov edx, OFFSET menuTitle
-    call WriteString
-    call CRLF
-
-    mov edx, OFFSET menuOptions
-    call WriteString
-    call CRLF
-
-    mov edx, OFFSET choice
-    call WriteString
-    call ReadInt
-    mov userChoice, eax
-
-    cmp eax, 1
-    je do_DecToBin
-    cmp eax, 2
-    je do_DecToOct
-    cmp eax, 3
-    je do_DecToHex
-    cmp eax, 4
-    je do_BinToDec
-    cmp eax, 5
-    je do_OctToDec
-    cmp eax, 6
-    je do_HexToDec
-    cmp eax, 7
-    je do_DirectConversions
-    cmp eax, 8
-    je do_TwosComplement
-    cmp eax, 9
-    je do_QuizMode
-    cmp eax, 10
-    je do_SpeedTest
-    cmp eax, 11
-    je ExitProgram
-
-    mov edx, OFFSET invalidMsg
-    call WriteString
-    call CRLF
-    jmp mainMenuLoop
-
-do_DecToBin:
-    mov edx, OFFSET decPrompt
-    call WriteString
-    call ReadDec
-    call DecToBin
-    jmp returnToMenu
-do_DecToOct:
-    call DecToOct
-    jmp returnToMenu
-do_DecToHex:
-    call DecToHex
-    jmp returnToMenu
-do_BinToDec:
-    call BinToDec
-    jmp returnToMenu
-do_OctToDec:
-    call OctToDec
-    jmp returnToMenu
-do_HexToDec:
-    call HexToDec
-    jmp returnToMenu
-do_DirectConversions:
-    call DirectConversions
-    jmp returnToMenu
-do_TwosComplement:
-    call TwosComplement
-    jmp returnToMenu
-do_QuizMode:
-    call QuizMode
-    jmp returnToMenu
-do_SpeedTest:
-    call SpeedTestMode
-    jmp returnToMenu
-
-returnToMenu:
-    call CRLF
-    jmp mainMenuLoop
-
-ExitProgram:
-    mov edx, OFFSET goodbyeMsg
-    call WriteString
-    call CRLF
-    exit
-main ENDP
-
-; Decimal to Binary
-DecToBin PROC
-    mov ecx, 32
-    mov ebx, eax
-    lea edi, outputBuffer
-    add edi, 31
-    mov BYTE PTR [edi+1], 0
-
-decToBinLoop:
-    mov eax, ebx
-    and eax, 1
-    add al, '0'
-    mov [edi], al
-    shr ebx, 1
-    dec edi
-    loop decToBinLoop
-
-    mov edx, OFFSET outputBuffer
-    call WriteString
-    call CRLF
+ClearBuffer PROC
+    push eax
+    xor eax,eax
+CLB1:
+    mov [edi],al
+    inc edi
+    loop CLB1
+    pop eax
     ret
-DecToBin ENDP
+ClearBuffer ENDP
 
-; Decimal to Octal
-DecToOct PROC
-    mov edx, OFFSET decPrompt
-    call WriteString
-    call ReadInt
-
-    mov ebx, eax
-    lea edi, outputBuffer
-    add edi, 31
-    mov BYTE PTR [edi+1], 0
-
-decToOctLoop:
-    mov eax, ebx
-    xor edx, edx
-    mov ecx, 8
-    div ecx
-    add dl, '0'
-    mov [edi], dl
-    mov ebx, eax
-    cmp ebx, 0
-    je decToOctDone
-    dec edi
-    jmp decToOctLoop
-
-decToOctDone:
-    mov edx, edi
-    call WriteString
-    call CRLF
-    ret
-DecToOct ENDP
-
-; Decimal to Hexadecimal
-DecToHex PROC
-    mov edx, OFFSET decPrompt
-    call WriteString
-    call ReadInt
-
-    mov ebx, eax
-    lea edi, outputBuffer
-    add edi, 31
-    mov BYTE PTR [edi+1], 0
-
-decToHexLoop:
-    mov eax, ebx
-    xor edx, edx
-    mov ecx, 16
-    div ecx
-    cmp dl, 9
-    jbe decToHexDigit
-    add dl, 7
-decToHexDigit:
-    add dl, '0'
-    mov [edi], dl
-    mov ebx, eax
-    cmp ebx, 0
-    je decToHexDone
-    dec edi
-    jmp decToHexLoop
-
-decToHexDone:
-    mov edx, edi
-    call WriteString
-    call CRLF
-    ret
-DecToHex ENDP
-
-; Get and Validate Binary Input
-GetBinaryInput PROC
-    mov edx, OFFSET binPrompt
-    call WriteString
-    mov edx, OFFSET inputBuffer
-    mov ecx, SIZEOF inputBuffer
+ReadLineIntoInputStr PROC
+    mov edx, OFFSET inputStr
+    mov ecx, SIZEOF inputStr
     call ReadString
-    
-    mov esi, OFFSET inputBuffer
-    xor eax, eax
-    
-validateBinaryLoop:
-    mov bl, [esi]
-    cmp bl, 0
-    je validationSuccess
-    cmp bl, '0'
-    jb validationError
-    cmp bl, '1'
-    ja validationError
-    shl eax, 1
-    sub bl, '0'
-    add eax, ebx
-    inc esi
-    jmp validateBinaryLoop
+    ret
+ReadLineIntoInputStr ENDP
 
-validationError:
-    mov edx, OFFSET invalidMsg
-    call WriteString
-    call CRLF
+ParseBinary PROC
+    push ebx
+    push esi
+    mov esi, OFFSET inputStr
+    xor eax,eax  
+PB_L1:
+    mov bl,[esi]
+    cmp bl,0
+    je PB_OK 
+    cmp bl,'0'
+    jb PB_ERR 
+    cmp bl,'1'
+    ja PB_ERR
+    shl eax,1
+    sub bl,'0'
+    movzx ebx, bl        
+    add eax,ebx          
+    inc esi
+    jmp PB_L1
+PB_ERR:
     stc
-    ret
-
-validationSuccess:
+    jmp PB_DONE
+PB_OK:
     clc
+PB_DONE:
+    pop esi
+    pop ebx
     ret
-GetBinaryInput ENDP
+ParseBinary ENDP
 
-; Binary to Decimal
-BinToDec PROC
-    call GetBinaryInput
-    jc binToDecExit
-    call WriteDec
-    call CRLF
-binToDecExit:
-    ret
-BinToDec ENDP
-
-; Octal to Decimal
-OctToDec PROC
-    mov edx, OFFSET octPrompt
-    call WriteString
-    mov edx, OFFSET inputBuffer
-    mov ecx, SIZEOF inputBuffer
-    call ReadString
-
-    mov esi, OFFSET inputBuffer
-    xor eax, eax
-    xor ebx, ebx
-octToDecLoop:
-    mov bl, [esi]
-    cmp bl, 0
-    je octToDecDone
-    sub bl, '0'
-    imul eax, 8
-    add eax, ebx
+ParseOctal PROC
+    push ebx
+    push esi
+    mov esi, OFFSET inputStr
+    xor eax,eax 
+PO_L1:
+    mov bl,[esi]
+    cmp bl,0
+    je PO_OK 
+    cmp bl,'0'
+    jb PO_ERR
+    cmp bl,'7'
+    ja PO_ERR
+    sub bl,'0'           
+    movzx ebx, bl
+    mov edx,8
+    mul edx
+    add eax,ebx
     inc esi
-    jmp octToDecLoop
-octToDecDone:
-    call WriteInt
-    call CRLF
+    jmp PO_L1
+PO_ERR:
+    stc
+    jmp PO_DONE
+PO_OK:
+    clc
+PO_DONE:
+    pop esi
+    pop ebx
     ret
-OctToDec ENDP
+ParseOctal ENDP
 
-; Hexadecimal to Decimal
-HexToDec PROC
-    mov edx, OFFSET hexPrompt
-    call WriteString
-    mov edx, OFFSET inputBuffer
-    mov ecx, SIZEOF inputBuffer
-    call ReadString
-
-    mov esi, OFFSET inputBuffer
-    xor eax, eax
-hexToDecLoop:
-    movzx ebx, BYTE PTR [esi]
-    cmp bl, 0
-    je hexToDecDone
-    shl eax, 4
-    cmp bl, '0'
-    jb hexNext
-    cmp bl, '9'
-    jbe hexAddDigit
-    cmp bl, 'A'
-    jb hexNext
-    cmp bl, 'F'
-    jbe hexAddAlpha
-    cmp bl, 'a'
-    jb hexNext
-    cmp bl, 'f'
-    ja hexNext
-    sub bl, 32
-hexAddAlpha:
-    sub bl, 'A'
-    add bl, 10
-    jmp hexAdd
-hexAddDigit:
-    sub bl, '0'
-hexAdd:
-    add eax, ebx
-hexNext:
+ParseHex PROC
+    push ebx
+    push esi
+    mov esi, OFFSET inputStr
+    xor eax,eax
+PH_L1:
+    mov bl,[esi]
+    cmp bl,0
+    je PH_OK
+    cmp bl,'a'
+    jb PH_SKIPLOW
+    cmp bl,'f'
+    ja PH_SKIPLOW
+    sub bl,32
+PH_SKIPLOW:
+    cmp bl,'0'
+    jb PH_ERR
+    cmp bl,'9'
+    jbe PH_DIG
+    cmp bl,'A'
+    jb PH_ERR
+    cmp bl,'F'
+    ja PH_ERR
+    sub bl,'A'
+    add bl,10
+    jmp PH_ADD
+PH_DIG:
+    sub bl,'0'
+PH_ADD:
+    movzx ebx, bl
+    shl eax,4
+    add eax,ebx
     inc esi
-    jmp hexToDecLoop
-hexToDecDone:
-    call WriteInt
-    call CRLF
+    jmp PH_L1
+PH_ERR:
+    stc
+    jmp PH_DONE
+PH_OK:
+    clc
+PH_DONE:
+    pop esi
+    pop ebx
     ret
-HexToDec ENDP
+ParseHex ENDP
 
-; Two's Complement
-TwosComplement PROC
-    mov edx, OFFSET msg1 
-    call WriteString
 
-    mov edx, OFFSET buffer
-    mov ecx, 32
-    call ReadString
-
-    mov esi, OFFSET buffer
-    mov ecx, 0
-validateLoop:
-    mov al, [esi]
-    cmp al, 0
-    je startConversion
-    cmp al, '0'
-    jb invalidBinaryTC
-    cmp al, '1'
-    ja invalidBinaryTC
-    inc esi
-    inc ecx
-    jmp validateLoop
-
-invalidBinaryTC:
-    mov edx, OFFSET invalidMsg
-    call WriteString
-    call CRLF
-    ret
-
-startConversion:
-    cmp ecx, 0
-    je invalidBinaryTC
-    
-    mov edi, OFFSET final
-    mov ecx, LENGTHOF final
+DecToBinStr PROC
+    pushad
+    mov ebx,eax
+    mov edi, OFFSET outStr
+    mov ecx, SIZEOF outStr
     call ClearBuffer
-    
-    mov esi, OFFSET buffer
-    mov edi, OFFSET final
 
-    mov ecx, 0
-copyInput:
-    mov al, [esi]
-    mov [edi], al
+    mov edi, OFFSET outStr
+    add edi,31
+    mov BYTE PTR [edi],0
+    dec edi
+
+    mov ecx,32
+DTB_L1:
+    mov eax,ebx
+    and eax,1
+    add al,'0'
+    mov [edi],al
+    shr ebx,1
+    dec edi
+    loop DTB_L1
+    mov esi, OFFSET outStr
+DTB_FIND1:
+    mov al,[esi]
+    cmp al,'0'
+    jne DTB_COPY
+    cmp BYTE PTR [esi+1],0
+    je DTB_COPY
+    inc esi
+    jmp DTB_FIND1
+DTB_COPY:
+    mov edi, OFFSET outStr
+DTB_COPY_L:
+    mov al,[esi]
+    mov [edi],al
     inc esi
     inc edi
-    inc ecx
-    cmp al, 0
-    jne copyInput
-    mov esi, OFFSET final
-invertLoop:
-    mov al, [esi]
-    cmp al, 0
-    je addOne
-    cmp al, '0'
-    je make1
-    mov BYTE PTR [esi], '0'
-    jmp nextInvert
-make1:
-    mov BYTE PTR [esi], '1'
-nextInvert:
+    cmp al,0
+    jne DTB_COPY_L
+
+    popad
+    ret
+DecToBinStr ENDP
+
+DecToOctStr PROC
+    pushad
+    mov ebx,eax
+    mov edi, OFFSET outStr
+    mov ecx, SIZEOF outStr
+    call ClearBuffer
+
+    mov edi, OFFSET outStr
+    add edi,31
+    mov BYTE PTR [edi],0
+    dec edi
+
+DTO_L1:
+    mov eax,ebx
+    xor edx,edx
+    mov ecx,8
+    div ecx
+    add dl,'0'
+    mov [edi],dl
+    mov ebx,eax
+    cmp ebx,0
+    jne DTO_CONT
+    jmp DTO_SHIFT
+DTO_CONT:
+    dec edi
+    jmp DTO_L1
+
+DTO_SHIFT:
+    mov esi,edi
+    mov edi, OFFSET outStr
+DTO_SH2:
+    mov al,[esi]
+    mov [edi],al
     inc esi
-    jmp invertLoop
+    inc edi
+    cmp al,0
+    jne DTO_SH2
 
-addOne:
-    mov esi, OFFSET final
-findEnd: 
-    cmp BYTE PTR [esi], 0
-    je doAdd
+    popad
+    ret
+DecToOctStr ENDP
+
+DecToHexStr PROC
+    pushad
+    mov ebx,eax
+    mov edi, OFFSET outStr
+    mov ecx, SIZEOF outStr
+    call ClearBuffer
+
+    mov edi, OFFSET outStr
+    add edi,31
+    mov BYTE PTR [edi],0
+    dec edi
+
+DTH_L1:
+    mov eax,ebx
+    xor edx,edx
+    mov ecx,16
+    div ecx
+    mov dl,dl
+    cmp dl,9
+    jbe DTH_DIG
+    add dl,7
+DTH_DIG:
+    add dl,'0'
+    mov [edi],dl
+    mov ebx,eax
+    cmp ebx,0
+    jne DTH_CONT
+    jmp DTH_SHIFT
+DTH_CONT:
+    dec edi
+    jmp DTH_L1
+
+DTH_SHIFT:
+    mov esi,edi
+    mov edi, OFFSET outStr
+DTH_SH2:
+    mov al,[esi]
+    mov [edi],al
     inc esi
-    jmp findEnd
+    inc edi
+    cmp al,0
+    jne DTH_SH2
 
-doAdd:
-    dec esi
-    mov bl, 1
+    popad
+    ret
+DecToHexStr ENDP
 
-addLoop:
-    cmp esi, OFFSET final
-    jb displayResult
-    
-    mov al, [esi]
-    cmp al, '0'
-    je handleZero
-    cmp bl, 1
-    jne noChange
-    mov BYTE PTR [esi], '0'
-    jmp nextDigit
-handleZero:
-    cmp bl, 1
-    jne noChange
-    mov BYTE PTR [esi], '1'
-    mov bl, 0
-noChange:
-nextDigit:
-    dec esi
-    jmp addLoop
-
-displayResult:
-    mov edx, OFFSET two_c_print 
+; ----- Decimal to Binary -----
+DoDecToBin PROC
+    mov edx, OFFSET decPrompt
     call WriteString
-    mov edx, OFFSET final
+    call ReadInt 
+    call DecToBinStr
+    mov edx, OFFSET outStr
     call WriteString
-    call CRLF
-    call WaitMsg
+    call Crlf
+    ret
+DoDecToBin ENDP
+
+; ----- Decimal to Octal -----
+DoDecToOct PROC
+    mov edx, OFFSET decPrompt
+    call WriteString
+    call ReadInt
+    call DecToOctStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    ret
+DoDecToOct ENDP
+
+; ----- Decimal to Hex -----
+DoDecToHex PROC
+    mov edx, OFFSET decPrompt
+    call WriteString
+    call ReadInt
+    call DecToHexStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    ret
+DoDecToHex ENDP
+
+; ----- Binary to Decimal -----
+DoBinToDec PROC
+    mov edx, OFFSET binPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary
+    jc BTD_ERR
+    call WriteDec
+    call Crlf
+    ret
+BTD_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoBinToDec ENDP
+
+; ----- Octal to Decimal -----
+DoOctToDec PROC
+    mov edx, OFFSET octPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseOctal
+    jc OTD_ERR
+    call WriteDec
+    call Crlf
+    ret
+OTD_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoOctToDec ENDP
+
+; ----- Hex to Decimal -----
+DoHexToDec PROC
+    mov edx, OFFSET hexPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseHex
+    jc HTD_ERR
+    call WriteDec
+    call Crlf
+    ret
+HTD_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoHexToDec ENDP
+
+; ----- Direct Conversions -----
+; BINARY -> OCTAL
+DoBinToOct PROC
+    mov edx, OFFSET binPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary
+    jc DBTO_ERR
+    call DecToOctStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    ret
+DBTO_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoBinToOct ENDP
+
+; BINARY -> HEX
+DoBinToHex PROC
+    mov edx, OFFSET binPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary
+    jc DBTH_ERR
+    call DecToHexStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    ret
+DBTH_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoBinToHex ENDP
+
+; OCTAL -> BINARY
+DoOctToBin PROC
+    mov edx, OFFSET octPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseOctal
+    jc DOTB_ERR
+    call DecToBinStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    ret
+DOTB_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoOctToBin ENDP
+
+; HEX -> BINARY
+DoHexToBin PROC
+    mov edx, OFFSET hexPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseHex
+    jc DHTB_ERR
+    call DecToBinStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    ret
+DHTB_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    ret
+DoHexToBin ENDP
+
+; ============================
+; TWO'S COMPLEMENT (BINARY)
+; ============================
+TwosComplement PROC
+    ; read and validate binary
+    mov edx, OFFSET tcPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary
+    jc TC_ERR 
+
+    mov esi, OFFSET inputStr
+TC_INV:
+    mov al,[esi]
+    cmp al,0
+    je TC_ADD1
+    cmp al,'0'
+    je TC_MAKE1
+    cmp al,'1'
+    je TC_MAKE0
+    jmp TC_ERR
+TC_MAKE1:
+    mov BYTE PTR [esi],'1'
+    jmp TC_NEXT
+TC_MAKE0:
+    mov BYTE PTR [esi],'0'
+TC_NEXT:
+    inc esi
+    jmp TC_INV
+
+TC_ADD1:
+    dec esi       
+    mov bl,1     
+TC_ADDL:
+    cmp esi, OFFSET inputStr
+    jb TC_DONEADD
+    mov al,[esi]
+    cmp al,'0'
+    je TC_ZERO
+    ; currently '1'
+    cmp bl,1
+    jne TC_NOCH
+    mov BYTE PTR [esi],'0'
+    jmp TC_MOVELEFT
+TC_ZERO:
+    cmp bl,1
+    jne TC_NOCH
+    mov BYTE PTR [esi],'1'
+    mov bl,0
+TC_NOCH:
+TC_MOVELEFT:
+    dec esi
+    jmp TC_ADDL
+
+TC_DONEADD:
+    mov edx, OFFSET tcResultMsg
+    call WriteString
+    mov edx, OFFSET inputStr
+    call WriteString
+    call Crlf
+    ret
+
+TC_ERR:
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
     ret
 TwosComplement ENDP
 
-; Direct Conversions Menu
-DirectConversions PROC
-    call Clrscr
-directMenuLoop:
-    mov edx, OFFSET directConvMenu
+; ============================
+; DIRECT CONVERSIONS MENU
+; ============================
+DirectConversionsMenu PROC
+DCLoop:
+    call Crlf
+    mov edx, OFFSET directMenuTitle
     call WriteString
-    call CRLF
+    call Crlf
+    mov edx, OFFSET directMenu
+    call WriteString
     mov edx, OFFSET directChoice
     call WriteString
     call ReadInt
-    cmp eax, 1
-    je do_BinToOct
-    cmp eax, 2
-    je do_BinToHex
-    cmp eax, 3
-    je do_OctToBin
-    cmp eax, 4
-    je do_HexToBin
-    cmp eax, 5
-    je directConvExit
+    mov userChoice,eax
+
+    cmp eax,1
+    je DC_BinOct
+    cmp eax,2
+    je DC_BinHex
+    cmp eax,3
+    je DC_OctBin
+    cmp eax,4
+    je DC_HexBin
+    cmp eax,5
+    je DC_Exit
+
     mov edx, OFFSET invalidMsg
     call WriteString
-    call CRLF
-    jmp directMenuLoop
+    call Crlf
+    jmp DCLoop
 
-do_BinToOct:
-    call BinToOct
-    jmp directMenuLoop
-do_BinToHex:
-    call BinToHex
-    jmp directMenuLoop
-do_OctToBin:
-    call OctToBin
-    jmp directMenuLoop
-do_HexToBin:
-    call HexToBin
-    jmp directMenuLoop
+DC_BinOct:
+    call DoBinToOct
+    jmp DCLoop
+DC_BinHex:
+    call DoBinToHex
+    jmp DCLoop
+DC_OctBin:
+    call DoOctToBin
+    jmp DCLoop
+DC_HexBin:
+    call DoHexToBin
+    jmp DCLoop
 
-directConvExit:
+DC_Exit:
     ret
-DirectConversions ENDP
+DirectConversionsMenu ENDP
 
-; Binary to Octal
-BinToOct PROC
-    call GetBinaryInput
-    jc binToOctExit
-    call DecimalToOctalString
-    mov edx, OFFSET correctAnswerBuffer
+; ============================
+; QUIZ / SPEED TEST CORE
+; ============================
+
+; AskQuestion
+; IN: EAX = questionType (1..12)
+; OUT: increments correctAnswers on success
+AskQuestion PROC
+    push eax
+    push ebx
+    push ecx
+    push edx
+    push esi
+    push edi
+    mov ebx,eax
+
+    mov eax,256
+    call RandomRange
+    mov tempVal,eax
+
+    cmp ebx,1
+    je Q_DecBin
+    cmp ebx,2
+    je Q_DecOct
+    cmp ebx,3
+    je Q_DecHex
+    cmp ebx,4
+    je Q_BinDec
+    cmp ebx,5
+    je Q_BinOct
+    cmp ebx,6
+    je Q_BinHex
+    cmp ebx,7
+    je Q_OctDec
+    cmp ebx,8
+    je Q_OctBin
+    cmp ebx,9
+    je Q_OctHex
+    cmp ebx,10
+    je Q_HexDec
+    cmp ebx,11
+    je Q_HexBin
+    ; else 12
+    jmp Q_HexOct
+
+; ----- 1: Decimal to Binary -----
+Q_DecBin:
+    mov edx, OFFSET qTextDecBin
     call WriteString
-    call CRLF
-binToOctExit:
+    mov eax,tempVal
+    call WriteDec
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary      
+    jc Q_WrongNoShow      
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowBin
+    jmp Q_Correct
+
+Q_WrongShowBin:
+    mov edx, OFFSET quizWrongMsg
+    call WriteString
+    mov eax,tempVal
+    call DecToBinStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    jmp Q_End
+
+; ----- 2: Decimal to Octal -----
+Q_DecOct:
+    mov edx, OFFSET qTextDecOct
+    call WriteString
+    mov eax,tempVal
+    call WriteDec
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseOctal
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowOct
+    jmp Q_Correct
+
+Q_WrongShowOct:
+    mov edx, OFFSET quizWrongMsg
+    call WriteString
+    mov eax,tempVal
+    call DecToOctStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    jmp Q_End
+
+; ----- 3: Decimal to Hex -----
+Q_DecHex:
+    mov edx, OFFSET qTextDecHex
+    call WriteString
+    mov eax,tempVal
+    call WriteDec
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseHex
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowHex
+    jmp Q_Correct
+
+Q_WrongShowHex:
+    mov edx, OFFSET quizWrongMsg
+    call WriteString
+    mov eax,tempVal
+    call DecToHexStr
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+    jmp Q_End
+
+; ----- 4: Binary to Decimal -----
+Q_BinDec:
+    ; Generate binary from decimal tempVal
+    mov eax,tempVal
+    call DecToBinStr
+    mov edx, OFFSET qTextBinDec
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadInt         
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowInt
+    jmp Q_Correct
+
+Q_WrongShowInt:
+    mov edx, OFFSET quizWrongMsg
+    call WriteString
+    mov eax,tempVal
+    call WriteDec
+    call Crlf
+    jmp Q_End
+
+; ----- 5: Binary to Octal -----
+Q_BinOct:
+    mov eax,tempVal
+    call DecToBinStr
+    mov edx, OFFSET qTextBinOct
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseOctal
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowOct
+    jmp Q_Correct
+
+; ----- 6: Binary to Hex -----
+Q_BinHex:
+    mov eax,tempVal
+    call DecToBinStr
+    mov edx, OFFSET qTextBinHex
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseHex
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowHex
+    jmp Q_Correct
+
+; ----- 7: Octal to Decimal -----
+Q_OctDec:
+    mov eax,tempVal
+    call DecToOctStr
+    mov edx, OFFSET qTextOctDec
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadInt
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowInt
+    jmp Q_Correct
+
+; ----- 8: Octal to Binary -----
+Q_OctBin:
+    mov eax,tempVal
+    call DecToOctStr
+    mov edx, OFFSET qTextOctBin
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowBin
+    jmp Q_Correct
+
+; ----- 9: Octal to Hex -----
+Q_OctHex:
+    mov eax,tempVal
+    call DecToOctStr
+    mov edx, OFFSET qTextOctHex
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseHex
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowHex
+    jmp Q_Correct
+
+; ----- 10: Hex to Decimal -----
+Q_HexDec:
+    mov eax,tempVal
+    call DecToHexStr
+    mov edx, OFFSET qTextHexDec
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadInt
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowInt
+    jmp Q_Correct
+
+; ----- 11: Hex to Binary -----
+Q_HexBin:
+    mov eax,tempVal
+    call DecToHexStr
+    mov edx, OFFSET qTextHexBin
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseBinary
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowBin
+    jmp Q_Correct
+
+; ----- 12: Hex to Octal -----
+Q_HexOct:
+    mov eax,tempVal
+    call DecToHexStr
+    mov edx, OFFSET qTextHexOct
+    call WriteString
+    mov edx, OFFSET outStr
+    call WriteString
+    call Crlf
+
+    mov edx, OFFSET userAnswerPrompt
+    call WriteString
+    call ReadLineIntoInputStr
+    call ParseOctal
+    jc Q_WrongNoShow
+
+    mov ebx,tempVal
+    cmp eax,ebx
+    jne Q_WrongShowOct
+    jmp Q_Correct
+
+; ----- Shared branches -----
+Q_WrongNoShow:
+    mov edx, OFFSET quizWrongMsg
+    call WriteString
+    call Crlf
+    jmp Q_End
+
+Q_Correct:
+    mov edx, OFFSET quizCorrectMsg
+    call WriteString
+    call Crlf
+    ; increment correctAnswers
+    mov eax, correctAnswers
+    inc eax
+    mov correctAnswers,eax
+
+Q_End:
+    pop edi
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
     ret
-BinToOct ENDP
+AskQuestion ENDP
 
-; -----------------------------
-; Binary to Hexadecimal
-; -----------------------------
-BinToHex PROC
-    call GetBinaryInput
-    jc binToHexExit
-    call DecimalToHexString
-    mov edx, OFFSET correctAnswerBuffer
+RunQuizCore PROC
+    ; Choose quiz type
+QuizTypeLoop:
+    call Crlf
+    mov edx, OFFSET quizTypeMenu
     call WriteString
-    call CRLF
-binToHexExit:
-    ret
-BinToHex ENDP
-
-; Octal to Binary
-OctToBin PROC
-    mov edx, OFFSET octPrompt
+    mov edx, OFFSET quizTypePrompt
     call WriteString
-    mov edx, OFFSET inputBuffer
-    mov ecx, SIZEOF inputBuffer
-    call ReadString
-    mov edi, OFFSET userAnswerBuffer
-    mov ecx, LENGTHOF userAnswerBuffer
-    mov al, 0
-    rep stosb
-    
-    mov esi, OFFSET inputBuffer
-    mov edi, OFFSET userAnswerBuffer
-    
-octToBinLoop:
-    mov al, [esi]
-    cmp al, 0
-    je octToBinDone
-    
-    cmp al, '0'
-    jb invalidOct
-    cmp al, '7'  
-    ja invalidOct
-    
-    cmp al, '0'
-    je digit_0
-    cmp al, '1'
-    je digit_1
-    cmp al, '2'
-    je digit_2
-    cmp al, '3'
-    je digit_3
-    cmp al, '4'
-    je digit_4
-    cmp al, '5'
-    je digit_5
-    cmp al, '6'
-    je digit_6
-    cmp al, '7'
-    je digit_7
+    call ReadInt
+    mov userChoice,eax
 
-digit_0:
-    mov DWORD PTR [edi], '000'
-    jmp next_digit
-digit_1:
-    mov DWORD PTR [edi], '100'
-    jmp next_digit
-digit_2:
-    mov DWORD PTR [edi], '010'
-    jmp next_digit
-digit_3:
-    mov DWORD PTR [edi], '110'
-    jmp next_digit
-digit_4:
-    mov DWORD PTR [edi], '001'
-    jmp next_digit
-digit_5:
-    mov DWORD PTR [edi], '101'
-    jmp next_digit
-digit_6:
-    mov DWORD PTR [edi], '011'
-    jmp next_digit
-digit_7:
-    mov DWORD PTR [edi], '111'
-
-next_digit:
-    add edi, 3
-    inc esi
-    jmp octToBinLoop
-
-invalidOct:
+    cmp eax,1
+    je QT_Random
+    cmp eax,2
+    je QT_Specific
+    cmp eax,3
+    je QT_Back
     mov edx, OFFSET invalidMsg
     call WriteString
-    call CRLF
+    call Crlf
+    jmp QuizTypeLoop
+
+QT_Random:
+    mov questionType,0
+    jmp QT_NextStep
+
+QT_Specific:
+SpecificLoop:
+    call Crlf
+    mov edx, OFFSET specificTypeMenu1
+    call WriteString
+    mov edx, OFFSET specificTypeMenu2
+    call WriteString
+    mov edx, OFFSET quizTypePrompt
+    call WriteString
+    call ReadInt
+    mov userChoice,eax
+    cmp eax,13
+    je QuizTypeLoop
+    cmp eax,1
+    jl SpecificLoop
+    cmp eax,12
+    jg SpecificLoop
+    mov questionType,eax
+    jmp QT_NextStep
+
+QT_Back:
     ret
-    
-octToBinDone:
-    mov BYTE PTR [edi], 0
-    mov edx, OFFSET userAnswerBuffer
-    call WriteString
-    call CRLF
-    ret
-OctToBin ENDP
 
-; Hexadecimal to Binary
-HexToBin PROC
-    mov edx, OFFSET hexPrompt
-    call WriteString
-    mov edx, OFFSET inputBuffer
-    mov ecx, SIZEOF inputBuffer
-    call ReadString
-    
-    mov edi, OFFSET userAnswerBuffer
-    mov ecx, LENGTHOF userAnswerBuffer
-    mov al, 0
-    rep stosb
-    
-    mov esi, OFFSET inputBuffer
-    mov edi, OFFSET userAnswerBuffer
-    
-hexToBinLoop:
-    mov al, [esi]
-    cmp al, 0
-    je hexToBinDone
-    
-    cmp al, 'a'
-    jb not_lower
-    cmp al, 'f'
-    ja not_lower
-    sub al, 32
-not_lower:
-    cmp al, '0'
-    je hex_0
-    cmp al, '1'
-    je hex_1
-    cmp al, '2'
-    je hex_2
-    cmp al, '3'
-    je hex_3
-    cmp al, '4'
-    je hex_4
-    cmp al, '5'
-    je hex_5
-    cmp al, '6'
-    je hex_6
-    cmp al, '7'
-    je hex_7
-    cmp al, '8'
-    je hex_8
-    cmp al, '9'
-    je hex_9
-    cmp al, 'A'
-    je hex_A
-    cmp al, 'B'
-    je hex_B
-    cmp al, 'C'
-    je hex_C
-    cmp al, 'D'
-    je hex_D
-    cmp al, 'E'
-    je hex_E
-    cmp al, 'F'
-    je hex_F
-    jmp invalidHex
-
-hex_0: mov DWORD PTR [edi], '0000'
-jmp next_hex
-hex_1: mov DWORD PTR [edi], '1000'
-jmp next_hex
-hex_2: mov DWORD PTR [edi], '0100'
-jmp next_hex
-hex_3: mov DWORD PTR [edi], '1100'
-jmp next_hex
-hex_4: mov DWORD PTR [edi], '0010'
-jmp next_hex
-hex_5: mov DWORD PTR [edi], '1010'
-jmp next_hex
-hex_6: mov DWORD PTR [edi], '0110'
-jmp next_hex
-hex_7: mov DWORD PTR [edi], '1110'
-jmp next_hex
-hex_8: mov DWORD PTR [edi], '0001'
-jmp next_hex
-hex_9: mov DWORD PTR [edi], '1001'
-jmp next_hex
-hex_A: mov DWORD PTR [edi], '0101'
-jmp next_hex
-hex_B: mov DWORD PTR [edi], '1101'
-jmp next_hex
-hex_C: mov DWORD PTR [edi], '0011'
-jmp next_hex
-hex_D: mov DWORD PTR [edi], '1011'
-jmp next_hex
-hex_E: mov DWORD PTR [edi], '0111'
-jmp next_hex
-hex_F: mov DWORD PTR [edi], '1111'
-jmp next_hex
-
-next_hex:
-    add edi, 4
-    inc esi
-    jmp hexToBinLoop
-
-invalidHex:
-    mov edx, OFFSET invalidMsg
-    call WriteString
-    call CRLF
-    ret
-    
-hexToBinDone:
-    mov BYTE PTR [edi], 0
-    mov edx, OFFSET userAnswerBuffer
-    call WriteString
-    call CRLF
-    ret
-HexToBin ENDP
-
-;====== Quiz Mode
-QuizMode PROC
-    call Clrscr
-    selectQuizType:
-        mov edx, OFFSET quizTitle
-        call WriteString
-        call Crlf
-        mov edx, OFFSET quizTypeMenu
-        call WriteString
-        call Crlf
-        mov edx, OFFSET quizTypePrompt
-        call WriteString
-        call ReadDec
-        mov selectedQuizType, eax
-        cmp selectedQuizType, 3
-        je backToMain
-        cmp selectedQuizType, 2
-        je specificType
-        cmp selectedQuizType, 1
-        je RandomType
-        mov edx, OFFSET invalidMsg
-        call WriteString
-        call CRLF
-    jmp selectQuizType
-    specificType:
-    mov edx, OFFSET specificTypeMenu
-    call WriteString
-    call CRLF
-    mov edx, OFFSET specificTypePrompt
-    call WriteString
-    call ReadDec
-    cmp eax, 13
-    je selectQuizType
-    mov questionType, eax 
-    jmp startQuiz
-
-    RandomType:
-    mov questionType, -1
-
-    startQuiz:
-    mov correctAnswers, 0
-    mov currentQuestion, 0
-    call CRLF
+QT_NextStep:
+    ; Ask num questions
     mov edx, OFFSET promptNumQuestions
     call WriteString
     call ReadInt
-    mov numQuestions, eax
-    call CRLF
-    call RunQuiz
-    call DisplayQuizResults
-    call AskPlayAgain
-    backtoMain:
+    mov numQuestions,eax
+
+    mov correctAnswers,0
+
+    mov eax,isSpeedTest
+    cmp eax,0
+    je QNoTime
+    call GetMseconds
+    mov startTime,eax
+QNoTime:
+    mov ecx,numQuestions
+    mov ebx,0
+QLoop:
+    inc ebx
+
+    mov edx, OFFSET progressMsg
+    call WriteString
+    mov eax,ebx
+    call WriteDec
+    mov edx, OFFSET ofMsg
+    call WriteString
+    mov eax,numQuestions
+    call WriteDec
+    call Crlf
+
+    mov eax,questionType
+    cmp eax,0
+    jne UseFixed
+    mov eax,12
+    call RandomRange
+    inc eax
+UseFixed:
+    call AskQuestion
+
+    call Crlf
+    loop QLoop
+
+    mov eax,isSpeedTest
+    cmp eax,0
+    je QNoEndTime
+    call GetMseconds
+    mov endTime,eax
+QNoEndTime:
+    mov edx, OFFSET scoreMsg
+    call WriteString
+    mov eax,correctAnswers
+    call WriteDec
+    mov edx, OFFSET outOfMsg
+    call WriteString
+    mov eax,numQuestions
+    call WriteDec
+
+    mov eax,correctAnswers
+    mov ebx,100
+    mul ebx 
+    mov ebx,numQuestions
+    xor edx,edx
+    div ebx  
+    mov edx, OFFSET percentMsg
+    call WriteString
+    call WriteDec
+    mov edx, OFFSET percentSuffix
+    call WriteString
+    call Crlf
+
+    mov eax,isSpeedTest
+    cmp eax,0
+    je SkipTime
+    mov eax,endTime
+    sub eax,startTime
+    mov edx, OFFSET timeMsg
+    call WriteString
+    call WriteDec
+    call Crlf
+SkipTime:
+PlayAgainLoop:
+    mov edx, OFFSET playAgainPrompt
+    call WriteString
+    call ReadInt
+    cmp eax,1
+    je RunQuizCore
+    cmp eax,2
+    je PQ_Done
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    jmp PlayAgainLoop
+
+PQ_Done:
+    ret
+RunQuizCore ENDP
+
+; ----- QuizMode: uses RunQuizCore with timer off -----
+QuizMode PROC
+    mov isSpeedTest,0
+    mov edx, OFFSET quizTitle
+    call WriteString
+    call Crlf
+    call RunQuizCore
     ret
 QuizMode ENDP
 
-RunQuiz PROC
-    mov edi, OFFSET questionBuffer
-    mov ecx, LENGTHOF questionBuffer
-    call ClearBuffer
-
-    mov edi, OFFSET correctAnswerBuffer
-    mov ecx, LENGTHOF correctAnswerBuffer
-    call ClearBuffer
-    mov ecx, numQuestions
-quizLoop:
-    push ecx
-    cmp questionType, -1
-    jne getQuestion
-    call GenerateRandomNumber
-    getQuestion:
-    call GenerateQuestion
-    getAnswer:
-
-    pop ecx
-loop quizLoop
-    ret
-RunQuiz ENDP
-
-GenerateRandomNumber PROC
-    mov eax, 12
-    call RandomRange
-    inc eax
-    mov questionType, eax
-    ret
-GenerateRandomNumber ENDP
-
-GenerateQuestion PROC
-    mov eax, questionType
-    cmp questionType, 1
-    je DeciToBin
-    cmp questionType, 2
-    je DeciToOct
-    cmp questionType, 3
-    je DeciToHex
-    cmp questionType, 4
-    je BinToDeci
-    cmp questionType, 5
-    je BinToOct
-    cmp questionType, 6
-    je BinToHex
-    cmp questionType, 7
-    je OctToDeci
-    cmp questionType, 8
-    je OctToBin
-    cmp questionType, 9
-    je OctToHex
-    cmp questionType, 10
-    je HexToDeci
-    cmp questionType, 11
-    je HexToBin
-    cmp questionType, 12
-    je HexToOct
-    jmp invalidQuestionType
-    
-    DeciToBin:
-    mov edx, OFFSET decToBinQText
-    call WriteString
-    mov eax, 256
-    call RandomRange
-    mov questionBuffer, eax
-    call WriteInt
-    call CRLF
-    call DecToBin
-    ;This should return binary in eax or something and that would be stored in correctAnswerBuffer
-    jmp done
-    
-    DeciToOct:
-    mov edx, OFFSET decToOctQText
-    call WriteString
-    
-    jmp done
-    
-    DeciToHex:
-    mov edx, OFFSET deciToHexQText
-    call WriteString
-    
-    jmp done
-    
-    BinToDeci:
-    mov edx, OFFSET binToDeciQText
-    call WriteString
-    
-    jmp done
-    
-    BinToOct:
-    mov edx, OFFSET binToOctQText
-    call WriteString
-    
-    jmp done
-    
-    BinToHex:
-    mov edx, OFFSET binToHexQText
-    call WriteString
-    
-    jmp done
-    
-    OctToDeci:
-    mov edx, OFFSET octToDeciQText
-    call WriteString
-    
-    jmp done
-    
-    OctToBin:
-    mov edx, OFFSET octToBinQText
-    call WriteString
-    
-    jmp done
-    
-    OctToHex:
-    mov edx, OFFSET octToHexQText
-    call WriteString
-    
-    jmp done
-    
-    HexToDeci:
-    mov edx, OFFSET hexToDeciQText
-    call WriteString
-    
-    jmp done
-    
-    HexToBin:
-    mov edx, OFFSET hexToBinQText
-    call WriteString
-    
-    jmp done
-
-    HexToOct:
-    mov edx, OFFSET hexToOctQText
-    call WriteString
-
-    jmp done
-    
-    invalidQuestionType:
-    mov edx, OFFSET invalidMsg
-    call WriteString
-    call CRLF
-    call QuizMode
-    done:
-    ret
-GenerateQuestion ENDP
-
-; Utilities
-ClearBuffer PROC
-    push edi              
-    mov edi, esi          
-    xor al, al            
-ClearLoop:
-    mov [edi], al        
-    inc edi
-    loop ClearLoop
-    pop edi
-    ret
-ClearBuffer ENDP
-; -----------------------------
-; Speed Test Mode (Stub)
-; -----------------------------
+; ----- SpeedTestMode: uses RunQuizCore with timer on -----
 SpeedTestMode PROC
-    mov edx, OFFSET hexPrompt
+    mov isSpeedTest,1
+    mov edx, OFFSET speedTitle
     call WriteString
-    ; TODO: Implement speed test logic
+    call Crlf
+    call RunQuizCore
     ret
 SpeedTestMode ENDP
 
-; Conversions
-DecimalToBinaryString PROC
-    pushad
-    mov ebx, eax
-    mov edi, OFFSET correctAnswerBuffer
-    add edi, 31
-    mov BYTE PTR [edi+1], 0
-    mov ecx, 32
-binConvertLoop:
-    mov eax, ebx
-    and eax, 1
-    add al, '0'
-    mov [edi], al
-    shr ebx, 1
-    dec edi
-    loop binConvertLoop
-    mov esi, OFFSET correctAnswerBuffer
-findFirstOne:
-    cmp BYTE PTR [esi], '1'
-    je foundStart
-    cmp BYTE PTR [esi], 0
-    je allZero
-    inc esi
-    jmp findFirstOne
+; ============================
+; MAIN PROGRAM
+; ============================
+main PROC
+    call Clrscr
+    call Randomize
 
-allZero:
-    mov edi, OFFSET correctAnswerBuffer
-    mov BYTE PTR [edi], '0'
-    mov BYTE PTR [edi+1], 0
-    jmp doneBin
+MainMenuLoop:
+    call Crlf
+    mov edx, OFFSET menuTitle
+    call WriteString
+    call Crlf
+    mov edx, OFFSET menuOptions
+    call WriteString
+    mov edx, OFFSET choiceMsg
+    call WriteString
+    call ReadInt
+    mov userChoice,eax
 
-foundStart:
-    mov edi, OFFSET correctAnswerBuffer
-shiftLoop:
-    mov al, [esi]
-    mov [edi], al
-    inc esi
-    inc edi
-    cmp al, 0
-    jne shiftLoop
+    cmp eax,1
+    je MM_DecBin
+    cmp eax,2
+    je MM_DecOct
+    cmp eax,3
+    je MM_DecHex
+    cmp eax,4
+    je MM_BinDec
+    cmp eax,5
+    je MM_OctDec
+    cmp eax,6
+    je MM_HexDec
+    cmp eax,7
+    je MM_Direct
+    cmp eax,8
+    je MM_Twos
+    cmp eax,9
+    je MM_Quiz
+    cmp eax,10
+    je MM_Speed
+    cmp eax,11
+    je MM_Exit
 
-doneBin:
-    mov byte ptr [edi], 0
-    popad
-    ret
-DecimalToBinaryString ENDP
+    mov edx, OFFSET invalidMsg
+    call WriteString
+    call Crlf
+    jmp MainMenuLoop
 
-DecimalToOctalString PROC
-    pushad
-    mov ebx, eax
-    mov edi, OFFSET correctAnswerBuffer
-    add edi, 31
-    mov BYTE PTR [edi+1], 0
-octConvertLoop:
-    mov eax, ebx
-    xor edx, edx
-    mov ecx, 8
-    div ecx
-    add dl, '0'
-    mov [edi], dl
-    mov ebx, eax
-    cmp ebx, 0
-    je doneOct
-    dec edi
-    jmp octConvertLoop
+MM_DecBin:
+    call DoDecToBin
+    jmp MainMenuLoop
+MM_DecOct:
+    call DoDecToOct
+    jmp MainMenuLoop
+MM_DecHex:
+    call DoDecToHex
+    jmp MainMenuLoop
+MM_BinDec:
+    call DoBinToDec
+    jmp MainMenuLoop
+MM_OctDec:
+    call DoOctToDec
+    jmp MainMenuLoop
+MM_HexDec:
+    call DoHexToDec
+    jmp MainMenuLoop
+MM_Direct:
+    call DirectConversionsMenu
+    jmp MainMenuLoop
+MM_Twos:
+    call TwosComplement
+    jmp MainMenuLoop
+MM_Quiz:
+    call QuizMode
+    jmp MainMenuLoop
+MM_Speed:
+    call SpeedTestMode
+    jmp MainMenuLoop
 
-doneOct:
-    mov esi, edi
-    mov edi, OFFSET correctAnswerBuffer
-shiftOct:
-    mov al, [esi]
-    mov [edi], al
-    inc esi
-    inc edi
-    cmp al, 0
-    jne shiftOct
-    mov byte ptr [edi], 0 
-    popad
-    ret
-DecimalToOctalString ENDP
-
-DecimalToHexString PROC
-    pushad
-    mov ebx, eax
-    mov edi, OFFSET correctAnswerBuffer
-    add edi, 31
-    mov BYTE PTR [edi+1], 0
-hexConvertLoop:
-    mov eax, ebx
-    xor edx, edx
-    mov ecx, 16
-    div ecx
-    cmp dl, 9
-    jbe hexDigit
-    add dl, 7
-hexDigit:
-    add dl, '0'
-    mov [edi], dl
-    mov ebx, eax
-    cmp ebx, 0
-    je doneHex
-    dec edi
-    jmp hexConvertLoop
-
-doneHex:
-    mov esi, edi
-    mov edi, OFFSET correctAnswerBuffer
-shiftHex:
-    mov al, [esi]
-    mov [edi], al
-    inc esi
-    inc edi
-    cmp al, 0
-    jne shiftHex
-    mov byte ptr [edi], 0 
-    popad
-    ret
-DecimalToHexString ENDP
-
+MM_Exit:
+    mov edx, OFFSET goodbyeMsg
+    call WriteString
+    call Crlf
+    exit
+main ENDP
 
 END main
